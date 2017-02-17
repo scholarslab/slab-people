@@ -37,12 +37,13 @@ def get_people(host=HOST):
 def to_person(p):
     """Extracts the information we want out of a WP people post-type."""
     try:
-        return Person(
-            p['date'],
-            p['title'],
-            ', '.join(cat['name'] for cat in p['terms']['people-category']),
-            p['content'],
-            )
+        terms = p['terms']
+        if terms:
+            categories = ', '.join(cat['name'] for cat in terms['people-category'])
+        else:
+            categories = None
+
+        return Person(p['date'], p['title'], categories, p['content'])
     except:
         import pprint
         print('ERROR ON: {}'.format(pprint.pformat(p)))
