@@ -16,11 +16,22 @@ Person = namedtuple('Person', FIELDS)
 
 def get_people(host=HOST):
     """Download all posts with post-type of people."""
-    resp = requests.get(
-        urljoin(host, '/wp-json/posts'),
-        params={'type': 'people'},
-        )
-    return resp.json()
+    page = 1
+    while True:
+        resp = requests.get(
+            urljoin(host, '/wp-json/posts'),
+            params={
+                'type': 'people',
+                'page': page,
+                },
+            )
+
+        chunk = resp.json()
+        if not chunk:
+            break
+        yield from chunk
+
+        page += 1
 
 
 def to_person(p):
