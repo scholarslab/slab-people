@@ -27,6 +27,11 @@ def over_contents(person, func):
     person['content'] = func(person['content'])
 
 
+def over_tokens(person, func):
+    """Run func over each token in the person's contents/description."""
+    person['content'] = [func(token) for token in person['content']]
+
+
 def de_html(text):
     """This removes HTML. """
     soup = BeautifulSoup(text, 'html.parser')
@@ -39,6 +44,11 @@ def tokenize(text):
     return tokenizer.tokenize(text)
 
 
+def normalize(token):
+    """Normalize a token."""
+    return token.lower()
+
+
 def main():
     with open(INPUT) as fin:
         people = json.load(fin)
@@ -46,6 +56,7 @@ def main():
     for person in people:
         over_contents(person, de_html)
         over_contents(person, tokenize)
+        over_tokens(person, normalize)
 
     json.dump(people, sys.stdout)
 
