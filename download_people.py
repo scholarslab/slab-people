@@ -2,16 +2,37 @@
 
 
 import csv
+import json
+import os
 import requests
 from urllib.parse import urljoin
 from collections import namedtuple
 
 
 HOST = 'http://scholarslab.org/'
-OUTPUT = 'people.csv'
+OUTPUT = 'people'
 FIELDS = ('date', 'name', 'category', 'description')
 
-Person = namedtuple('Person', FIELDS)
+class Person(namedtuple('Person', FIELDS)):
+    __slot__ = ()
+
+    @staticmethod
+    def from_json(p):
+        """Extracts the information we want out of a WP people post-type."""
+        try:
+            terms = p['terms']
+            if terms:
+                categories = ', '.join(
+                    cat['name'] for cat in terms['people-category']
+                    )
+            else:
+                categories = None
+
+            return Person(p['date'], p['title'], categories, p['content'])
+        except:
+            import pprint
+            print('ERROR ON: {}'.format(pprint.pformat(p)))
+            raise
 
 
 def get_people(host=HOST):
@@ -34,27 +55,18 @@ def get_people(host=HOST):
         page += 1
 
 
-def to_person(p):
-    """Extracts the information we want out of a WP people post-type."""
-    try:
-        terms = p['terms']
-        if terms:
-            categories = ', '.join(cat['name'] for cat in terms['people-category'])
-        else:
-            categories = None
-
-        return Person(p['date'], p['title'], categories, p['content'])
-    except:
-        import pprint
-        print('ERROR ON: {}'.format(pprint.pformat(p)))
-        raise
-
-
 def main():
-    with open(OUTPUT, 'w') as fout:
+    people = list(get_people())
+
+    csv_name = OUTPUT + '.csv'
+    with open(csv_name, 'w') as fout:
         writer = csv.writer(fout)
         writer.writerow(Person._fields)
-        writer.writerows(to_person(p) for p in get_people())
+        writer.writerows(Person.from_json(p) for p in people)
+
+    json_name = OUTPUT + '.json'
+    with open(json_name, 'w') as fout:
+        json.dump(people, fout)
 
 
 if __name__ == '__main__':
