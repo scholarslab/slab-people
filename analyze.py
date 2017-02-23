@@ -12,6 +12,7 @@ way that's easy to visualize with d3.
 # TODO basic statistics by tag
 
 
+from collections import Counter
 import json
 import sys
 
@@ -25,12 +26,12 @@ STOP_FILE = 'english.stopwords'
 
 def over_contents(person, func):
     """Run func over the person's contents/description."""
-    person['content'] = func(person['content'])
+    person['text'] = func(person['text'])
 
 
 def over_tokens(person, func):
     """Run func over each token in the person's contents/description."""
-    person['content'] = [func(token) for token in person['content']]
+    person['text'] = [func(token) for token in person['text']]
 
 
 def de_html(text):
@@ -59,6 +60,29 @@ def filter_tokens(text, stopwords):
         ]
 
 
+def frequencies(tokens):
+    """Generate counts from a list of tokens."""
+    return Counter(tokens)
+
+
+def pull_data(person):
+    """This pulls the relevant data from the person structure."""
+    terms = person['terms']
+    if terms:
+        tags = [cat['name'] for cat in terms['people-category']]
+    else:
+        tags = None
+
+    return {
+        'text': person['content'],
+        'description': person['content'],
+        'date': person['date'],
+        'url': person['link'],
+        'tags': tags,
+        'name': person['title'],
+        }
+
+
 def main():
     """Process and produce the data file."""
     with open(INPUT) as fin:
@@ -67,11 +91,13 @@ def main():
     with open(STOP_FILE) as fin:
         stopwords = set(normalize(token) for token in tokenize(fin.read()))
 
+    people = [pull_data(person) for person in people]
     for person in people:
         over_contents(person, de_html)
         over_contents(person, tokenize)
         over_tokens(person, normalize)
         over_contents(person, lambda t: filter_tokens(t, stopwords))
+        over_contents(person, frequencies)
 
     json.dump(people, sys.stdout)
 
