@@ -20,6 +20,7 @@ from nltk.tokenize.casual import TweetTokenizer
 
 
 INPUT = 'people.json'
+STOP_FILE = 'english.stopwords'
 
 
 def over_contents(person, func):
@@ -49,14 +50,28 @@ def normalize(token):
     return token.lower()
 
 
+def filter_tokens(text, stopwords):
+    """Remove tokens we won't use."""
+    return [
+        token
+        for token in text
+        if token not in stopwords and len(token) > 1
+        ]
+
+
 def main():
+    """Process and produce the data file."""
     with open(INPUT) as fin:
         people = json.load(fin)
+
+    with open(STOP_FILE) as fin:
+        stopwords = set(normalize(token) for token in tokenize(fin.read()))
 
     for person in people:
         over_contents(person, de_html)
         over_contents(person, tokenize)
         over_tokens(person, normalize)
+        over_contents(person, lambda t: filter_tokens(t, stopwords))
 
     json.dump(people, sys.stdout)
 
