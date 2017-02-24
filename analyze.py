@@ -7,7 +7,6 @@ way that's easy to visualize with d3.
 """
 
 # TODO basic statistics
-# TODO frequencies
 # TODO frequencies by tag
 # TODO basic statistics by tag
 
@@ -65,6 +64,24 @@ def frequencies(tokens):
     return Counter(tokens)
 
 
+def corpus_frequencies(corpus):
+    """With a sequence of Counter objects, get a sum."""
+    counts = Counter()
+    for freq in corpus:
+        counts.update(freq.elements())
+    return counts
+
+
+def find_singletons(freqs):
+    """Return a set of singleton tokens."""
+    return {k for k, v in freqs.items() if v == 1}
+
+
+def remove_set(text_freqs, stoplist):
+    """Removes items in stoplist from text_freqs dictionary."""
+    return {k: v for k, v in text_freqs.items() if k not in stoplist}
+
+
 def pull_data(person):
     """This pulls the relevant data from the person structure."""
     terms = person['terms']
@@ -98,6 +115,11 @@ def main():
         over_tokens(person, normalize)
         over_contents(person, lambda t: filter_tokens(t, stopwords))
         over_contents(person, frequencies)
+
+    counts = corpus_frequencies(person['text'] for person in people)
+    singletons = find_singletons(counts)
+    for person in people:
+        over_contents(person, lambda t: remove_set(t, singletons))
 
     json.dump(people, sys.stdout)
 
