@@ -21,6 +21,7 @@ from nltk.tokenize.casual import TweetTokenizer
 
 INPUT = 'people.json'
 STOP_FILE = 'english.stopwords'
+TXT_OUTPUT = 'slab-people.txt'
 
 
 def over_contents(person, func):
@@ -122,6 +123,13 @@ def main():
         over_contents(person, lambda t: remove_set(t, singletons))
 
     json.dump(people, sys.stdout)
+
+    with open(TXT_OUTPUT, 'w') as fout:
+        for person in people:
+            description = person['description']
+            soup = BeautifulSoup(description, 'html.parser')
+            fout.write(' '.join(soup.get_text().split()))
+            fout.write('\n')
 
 
 if __name__ == '__main__':
